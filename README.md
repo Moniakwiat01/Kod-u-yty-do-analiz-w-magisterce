@@ -3,24 +3,22 @@ Upubliczniony kod posłużył do analiz w magisterce pod tytułem: "Turkus czy c
 Analiza Wzorców Preferencji Wyboru Koloru Organizacji Wśród Studentów
 Opis projektu
 Repozytorium zawiera kod R i analizy statystyczne z pracy magisterskiej dotyczącej badania preferencji studentów w zakresie wyboru koloru organizacji jako elementu kultury organizacyjnej i zarządzania.
-Zakres badania
+**Zakres badania**
 Praca koncentruje się na:
-
 Analizie wzorców preferencji kolorystycznych organizacji wśród studentów
-Badaniu stabilności wyborów według różnych charakterystyk demograficznych
+Badaniu stabilności wyborów według różnych charakterystyk
 Zastosowaniu wielowymiarowych metod statystycznych do segmentacji respondentów
-Konstrukcji i walidacji filarów badawczych preferencji
+Konstrukcji  filarów badawczych preferencji
 
-Metodologia
+**Metodologia**
 Metody statystyczne zastosowane w R:
-
 Analiza wielowymiarowa - badanie złożonych relacji między zmiennymi
-Analiza skupień (cluster analysis) - segmentacja respondentów
+Analiza skupień - segmentacja respondentów
 Miary związku dla zmiennych porządkowych - badanie korelacji
 Analiza stabilności wyboru - badanie konsistencji preferencji
 Analiza według charakterystyk demograficznych - segmentacja populacji
 
-Narzędzia i pakiety R:
+**Narzędzia i pakiety R:**
 r# Główne pakiety wykorzystane w analizie
 library(cluster)          # analiza skupień
 library(FactoMineR)       # analiza wielowymiarowa
@@ -39,7 +37,7 @@ Struktura projektu
 ├── plots/                   # Wykresy i wizualizacje
 ├── reports/                 # Raporty R Markdown
 └── README.md
-Główne komponenty analizy
+**Główne komponenty analizy**
 1. Analiza wstępna (Rozdział 3.2)
 
 Statystyki opisowe zmiennych
@@ -50,27 +48,25 @@ Podstawowe charakterystyki próby badawczej
 
 Segmentacja według płci, wieku, kierunku studiów
 Badanie różnic w preferencjach między grupami
-Testy istotności statystycznej
 
 3. Konstrukcja filarów badawczych (Rozdział 4.1)
 
-Redukcja wymiarowości danych
+Wysczególnienie filarów dla ułatwienia analiz próby
 Walidacja skal pomiarowych
-Analiza rzetelności narzędzi
 
 4. Analiza stabilności (Rozdziały 4.2-4.3)
 
 Badanie konsistencji wyborów respondentów
 Analiza zgodności preferencji vs rzeczywisty wybór firmy
-Miary stabilności czasowej
+Miary stabilności
 
 5. Analiza skupień (Rozdział 4.4)
 
-Segmentacja respondentów metodami klastrowania
+Segmentacja respondentów metodą PAM
 Identyfikacja grup o podobnych preferencjach
 Charakterystyka profili segmentów
 
-Kluczowe wyniki
+**Kluczowe wyniki**
 Badanie pozwoliło na:
 
 Identyfikację głównych wzorców preferencji kolorystycznych wśród studentów
@@ -100,20 +96,18 @@ Techniczne informacje
 
 Język programowania: R
 Środowisko: RStudio
-Wersja R: 4.x.x
-Wielkość próby: [N respondentów]
-Metoda zbierania danych: Badanie ankietowe
+Wielkość próby: [209 respondentów]
+Metoda zbierania danych: Badanie sondażowe
 
 Struktura teoretyczna
 Praca osadzona jest w teorii zarządzania organizacjami z uwzględnieniem:
 
 Teorii kultury organizacyjnej
 Koncepcji barw organizacji
-Psychologii koloru w kontekście organizacyjnym
 Współczesnych teorii zarządzania i przedsiębiorczości
 
-Autor
-[Twoje imię i nazwisko]
-Praca magisterska - [Nazwa uczelni], [Rok]
-Licencja
+**Autor**
+Monika Kwiatkowska
+Praca magisterska - Uniwersytet Gdański,2025
+**Licencja**
 Kod udostępniony na potrzeby prezentacji wyników badań akademickich.
