@@ -27,16 +27,7 @@ library(corrplot)         # macierze korelacji
 library(ggplot2)          # wizualizacje
 library(dplyr)            # manipulacja danych
 library(psych)            # psychometria i statystyki opisowe
-Struktura projektu
-├── data/                    # Dane z badania ankietowego
-├── scripts/                 # Skrypty R z analizami
-│   ├── 01_analiza_wstepna.R
-│   ├── 02_analiza_demograficzna.R
-│   ├── 03_analiza_wielowymiarowa.R
-│   └── 04_analiza_skupien.R
-├── plots/                   # Wykresy i wizualizacje
-├── reports/                 # Raporty R Markdown
-└── README.md
+
 **Główne komponenty analizy**
 1. Analiza wstępna (Rozdział 3.2)
 
