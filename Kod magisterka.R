@@ -884,7 +884,297 @@ cat("  gamma =", round(gamma_hierarchia_stres$gamma, 3),
     ", p =", round(gamma_hierarchia_stres$p_value, 4),
     ", 95% CI [", round(gamma_hierarchia_stres$ci_lower, 3), ",", round(gamma_hierarchia_stres$ci_upper, 3), "]\n")
 
+#####Analiza satbilności studentów między pytaniem 7 a dominuącym kolorem w profilu wierszowym#############################
+# Hierarchia kolorów 
+hierarchia_kolorow <- c("czerwona", "bursztynowa", "pomarańczowa", "zielona", "turkusowa")
 
+# Funkcja do analizy zgodności kolorów
+analiza_zgodnosci_kontrola <- function(dane, kolumna_sredni, kolumna_kontrola, nazwa_analizy) {
+  
+  # Filtrowanie danych (usunięcie NA)
+  dane_filtrowane <- dane %>%
+    filter(!is.na(!!sym(kolumna_sredni)) & !is.na(!!sym(kolumna_kontrola)))
+  
+  # Obliczenie zgodności
+  zgodne <- sum(dane_filtrowane[[kolumna_sredni]] == dane_filtrowane[[kolumna_kontrola]])
+  calkowite <- nrow(dane_filtrowane)
+  procent_zgodnosci <- (zgodne / calkowite) * 100
+  
+  # Wyświetlenie wyników
+  cat("\n", nazwa_analizy, ":\n")
+  cat("- Liczba zgodnych odpowiedzi:", zgodne, "\n")
+  cat("- Całkowita liczba odpowiedzi:", calkowite, "\n")
+  cat("- Procent zgodności:", round(procent_zgodnosci, 2), "%\n")
+  
+  return(procent_zgodnosci)
+}
+
+# Funkcja do obliczania gamma z testami
+oblicz_gamma_z_testem_kontrola <- function(x, y) {
+  # Konwersja na rangi
+  x_rang <- as.numeric(factor(x, levels = hierarchia_kolorow, ordered = TRUE))
+  y_rang <- as.numeric(factor(y, levels = hierarchia_kolorow, ordered = TRUE))
+  
+  # Usunięcie par z NA
+  kompletne <- complete.cases(x_rang, y_rang)
+  x_rang <- x_rang[kompletne]
+  y_rang <- y_rang[kompletne]
+  
+  # Obliczenie tabeli kontyngencji
+  tabela <- table(x_rang, y_rang)
+  
+  # Obliczenie gamma
+  n <- sum(tabela)
+  P <- 0  # Pary zgodne
+  Q <- 0  # Pary niezgodne
+  
+  for(i in 1:(nrow(tabela)-1)) {
+    for(j in 1:(ncol(tabela)-1)) {
+      for(k in (i+1):nrow(tabela)) {
+        for(l in (j+1):ncol(tabela)) {
+          P <- P + tabela[i,j] * tabela[k,l]
+        }
+      }
+    }
+  }
+  
+  for(i in 1:(nrow(tabela)-1)) {
+    for(j in 2:ncol(tabela)) {
+      for(k in (i+1):nrow(tabela)) {
+        for(l in 1:(j-1)) {
+          Q <- Q + tabela[i,j] * tabela[k,l]
+        }
+      }
+    }
+  }
+  
+  gamma <- ifelse(P + Q == 0, 0, (P - Q) / (P + Q))
+  
+  # Błąd standardowy gamma
+  if(P + Q > 0) {
+    se_gamma <- sqrt(4 * P * Q * (P + Q - (P - Q)^2 / (P + Q))) / (P + Q)^2
+    z_stat <- gamma / se_gamma
+    p_value <- 2 * (1 - pnorm(abs(z_stat)))
+    ci_lower <- gamma - 1.96 * se_gamma
+    ci_upper <- gamma + 1.96 * se_gamma
+  } else {
+    se_gamma <- 0
+    z_stat <- 0
+    p_value <- 1
+    ci_lower <- 0
+    ci_upper <- 0
+  }
+  
+  return(list(
+    gamma = gamma,
+    p_value = p_value,
+    ci_lower = ci_lower,
+    ci_upper = ci_upper,
+    n = n,
+    P = P,
+    Q = Q
+  ))
+}
+
+# Analiza zgodności głównej
+zgodnosc_sredni_kontrola <- analiza_zgodnosci_kontrola(
+  dane, "kolor_sredni", "pyt7_firma", 
+  "Zgodność: Kolor średni vs Pytanie kontrolne"
+)
+
+# Analiza korelacji rangowej (gamma)
+dane_kompletne <- dane %>%
+  filter(!is.na(kolor_sredni) & !is.na(pyt7_firma))
+
+gamma_wynik <- oblicz_gamma_z_testem_kontrola(dane_kompletne$kolor_sredni, dane_kompletne$pyt7_firma)
+
+print("\nANALIZA KORELACJI RANGOWEJ (GAMMA)")
+print("==================================")
+cat("Współczynnik gamma:", round(gamma_wynik$gamma, 3), "\n")
+cat("Wartość p:", round(gamma_wynik$p_value, 4), "\n")
+cat("95% CI: [", round(gamma_wynik$ci_lower, 3), ",", round(gamma_wynik$ci_upper, 3), "]\n")
+cat("Liczba par:", gamma_wynik$n, "\n")
+cat("Pary zgodne (P):", gamma_wynik$P, "\n")
+cat("Pary niezgodne (Q):", gamma_wynik$Q, "\n")
+
+# Interpretacja gamma
+interpretuj_gamma <- function(gamma) {
+  abs_gamma <- abs(gamma)
+  if (abs_gamma < 0.1) return("bardzo słaby")
+  if (abs_gamma < 0.3) return("słaby")
+  if (abs_gamma < 0.5) return("umiarkowany")
+  if (abs_gamma < 0.7) return("silny")
+  return("bardzo silny")
+}
+
+cat("Interpretacja:", interpretuj_gamma(gamma_wynik$gamma), "związek\n")
+
+# Test istotności
+if(gamma_wynik$p_value < 0.05) {
+  cat("Związek jest statystycznie istotny (p < 0.05)\n")
+} else {
+  cat("Związek NIE jest statystycznie istotny (p >= 0.05)\n")
+}
+
+# Wizualizacja wyników
+library(ggplot2)
+
+# Obliczenie liczby zgodnych i niezgodnych
+zgodne_liczba <- sum(dane$kolor_sredni == dane$pyt7_firma, na.rm = TRUE)
+niezgodne_liczba <- sum(dane$kolor_sredni != dane$pyt7_firma, na.rm = TRUE)
+
+# Dane do wykresu
+dane_wykres <- data.frame(
+  Kategoria = c("Zgodne odpowiedzi", "Niezgodne odpowiedzi"),
+  Liczba = c(zgodne_liczba, niezgodne_liczba),
+  Procent = c(zgodnosc_sredni_kontrola, 100 - zgodnosc_sredni_kontrola)
+)
+
+# Wykres słupkowy
+wykres_zgodnosci <- ggplot(dane_wykres, aes(x = Kategoria, y = Procent, fill = Kategoria)) +
+  geom_col(alpha = 0.8, width = 0.6) +
+  geom_text(aes(label = paste0(round(Procent, 1), "%")), 
+            vjust = -0.5, size = 4, fontface = "bold") +
+  scale_fill_manual(values = c("#27ae60", "#e74c3c")) +
+  labs(title = "Zgodność między kolorem średnim a pytaniem kontrolnym",
+       subtitle = "Analiza spójności odpowiedzi respondentów",
+       x = "Kategoria odpowiedzi",
+       y = "Procent (%)") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    legend.position = "none",
+    panel.grid.minor = element_blank()
+  ) +
+  ylim(0, max(dane_wykres$Procent) * 1.1)
+
+print(wykres_zgodnosci)
+
+# Tabela kontyngencji
+tabela_kontyngencji <- table(dane$kolor_sredni, dane$pyt7_firma, useNA = "ifany")
+
+print("\nTABELA KONTYNGENCJI")
+print("==================")
+print(tabela_kontyngencji)
+
+# Proporcje wierszowe
+print("\nPROPORCJE WIERSZOWE (%)")
+print("======================")
+proporcje <- prop.table(tabela_kontyngencji, 1) * 100
+print(round(proporcje, 1))
+
+# Mapa cieplna zgodności
+library(reshape2)
+heatmap_data <- melt(tabela_kontyngencji)
+names(heatmap_data) <- c("Kolor_sredni", "Pyt7_firma", "Liczba")
+
+wykres_heatmap <- ggplot(heatmap_data, aes(x = Kolor_sredni, y = Pyt7_firma, fill = Liczba)) +
+  geom_tile(color = "white", size = 0.5) +
+  geom_text(aes(label = Liczba), color = "white", size = 4, fontface = "bold") +
+  scale_fill_gradient(low = "#e74c3c", high = "#27ae60", name = "Liczba\nrespond.") +
+  labs(title = "Mapa cieplna: Kolor dominujący vs Pytanie kontrolne",
+       subtitle = "Liczba respondentów w każdej kombinacji kolorów",
+       x = "Kolor dominujący", y = "Pytanie kontrolne (pyt7_firma)") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  ) +
+  coord_equal()
+
+print(wykres_heatmap)
+
+# TABELA PODSUMOWUJĄCA WG KOLORÓW FIRMY
+# ====================================
+
+# Obliczanie statystyk dla każdego koloru firmy
+tabela_kolorow <- dane %>%
+  filter(!is.na(pyt7_firma) & !is.na(kolor_sredni)) %>%
+  group_by(pyt7_firma) %>%
+  summarise(
+    Liczba_studentow = n(),
+    Zgodnosc_procent = round(mean(kolor_sredni == pyt7_firma) * 100, 1),
+    .groups = 'drop'
+  )
+
+# Obliczanie średniej stabilności (jako przykład - można dostosować)
+# Zakładam że chcesz stabilność jako odwrotność rozproszenia odpowiedzi
+srednia_stabilnosc <- dane %>%
+  filter(!is.na(pyt7_firma) & !is.na(kolor_sredni)) %>%
+  group_by(pyt7_firma) %>%
+  summarise(
+    # Stabilność jako zgodność podzielona przez 100 (żeby mieć wartości 0-1)
+    Srednia_stabilnosc = round(mean(kolor_sredni == pyt7_firma), 3),
+    .groups = 'drop'
+  )
+
+# Łączenie tabel
+tabela_finalna <- merge(tabela_kolorow, srednia_stabilnosc, by = "pyt7_firma")
+
+# Sortowanie według kolejności hierarchii kolorów
+tabela_finalna$pyt7_firma <- factor(tabela_finalna$pyt7_firma, 
+                                    levels = hierarchia_kolorow, 
+                                    ordered = TRUE)
+tabela_finalna <- tabela_finalna[order(tabela_finalna$pyt7_firma),]
+
+# Zmiana nazw kolumn
+names(tabela_finalna) <- c("Kolory_firmy", "Liczba_studentow", "Zgodnosc_cechy_procent", "Srednia_stabilnosc")
+
+# Wyświetlenie tabeli
+print("\nTABELA PODSUMOWUJĄCA WG KOLORÓW FIRMY")
+print("====================================")
+print(tabela_finalna)
+
+# Sformatowana tabela do łatwego kopiowania
+print("\nSFORMATOWANA TABELA (do kopiowania):")
+print("===================================")
+cat("Kolory firmy\t\tLiczba studentów\tŚrednia stabilność\tZgodność cechy (%)\n")
+cat("--------------------------------------------------------------------------\n")
+for(i in 1:nrow(tabela_finalna)) {
+  cat(sprintf("%-12s\t\t%d\t\t\t%.3f\t\t\t%.1f\n", 
+              tabela_finalna$Kolory_firmy[i],
+              tabela_finalna$Liczba_studentow[i],
+              tabela_finalna$Srednia_stabilnosc[i],
+              tabela_finalna$Zgodnosc_cechy_procent[i]))
+}
+
+# Dodatkowe statystyki
+print("\nDODAT KOWE STATYSTYKI:")
+print("=====================")
+cat("Najwyższa zgodność:", max(tabela_finalna$Zgodnosc_cechy_procent), "% (", 
+    tabela_finalna$Kolory_firmy[which.max(tabela_finalna$Zgodnosc_cechy_procent)], ")\n")
+cat("Najniższa zgodność:", min(tabela_finalna$Zgodnosc_cechy_procent), "% (", 
+    tabela_finalna$Kolory_firmy[which.min(tabela_finalna$Zgodnosc_cechy_procent)], ")\n")
+cat("Średnia zgodność:", round(mean(tabela_finalna$Zgodnosc_cechy_procent), 1), "%\n")
+cat("Najwyższa stabilność:", max(tabela_finalna$Srednia_stabilnosc), 
+    "(", tabela_finalna$Kolory_firmy[which.max(tabela_finalna$Srednia_stabilnosc)], ")\n")
+
+# Podsumowanie końcowe
+print("\nPODSUMOWANIE WYNIKÓW")
+print("===================")
+cat("Procent zgodności kolorów:", round(zgodnosc_sredni_kontrola, 2), "%\n")
+cat("Liczba zgodnych odpowiedzi:", zgodne_liczba, "z", zgodne_liczba + niezgodne_liczba, "\n")
+cat("Korelacja rangowa (gamma):", round(gamma_wynik$gamma, 3), "\n")
+cat("Siła związku:", interpretuj_gamma(gamma_wynik$gamma), "\n")
+cat("Istotność statystyczna:", ifelse(gamma_wynik$p_value < 0.05, "TAK", "NIE"), "\n")
+
+print("\nINTERPRETACJA:")
+print("=============")
+if(zgodnosc_sredni_kontrola > 50) {
+  cat("• Wysoka zgodność - respondenci są spójni w swoich odpowiedziach\n")
+} else if(zgodnosc_sredni_kontrola > 30) {
+  cat("• Umiarkowana zgodność - część respondentów jest spójna\n")
+} else {
+  cat("• Niska zgodność - respondenci nie są spójni w swoich odpowiedziach\n")
+}
+
+if(abs(gamma_wynik$gamma) > 0.3) {
+  cat("• Istnieje zauważalny związek między kolorami średnimi a wyborem firmy\n")
+} else {
+  cat("• Słaby związek między kolorami średnimi a wyborem firmy\n")
 #####################################KORELACJE MIĘDZY PYTANIAMI#############################3
 
 
